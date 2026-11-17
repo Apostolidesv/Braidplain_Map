@@ -13,9 +13,12 @@ html,body,#map{width:100%;height:100%;margin:0;background:#e9eff1;font-family:'T
 <div class="panel"><h1>Alaska's Changing Braidplains</h1><div class="sub">NDVI · Glacierization · Watershed land cover</div><div class="buttons"><button id="all" class="active">Both regions</button><button id="juneau">Juneau</button><button id="denali">Denali</button></div><label>Polygon color: <select id="metric"><option value="Median_NDVI">Median NDVI</option><option value="NDVI_Trend_perYear">NDVI trend / year</option><option value="Glacierized_Percent_2000">Glacierized watershed (%) · 2000</option></select></label><label>Lake outlines: <select id="lakeYear"><option value="1986">1984–1988</option><option value="1999">1997–2001</option><option value="2009">2007–2011</option><option value="2018">2016–2019</option><option value="all">All surveyed periods</option></select></label><small style="color:#637980">Survey periods represent mapped lake extents, not annual observations.</small><div class="status" id="status">Loading research polygons…</div><div class="status" id="lakeCount"></div></div>
 <aside class="project"><h2>About this research</h2><h3>Research question</h3><p>How does the formation of proglacial lakes influence downstream braidplain stability and vegetation succession?</p><h3>Hypothesis</h3><p>Lake-associated braidplains may experience faster NDVI increases as reduced channel disturbance allows vegetation to establish.</p><h3>Study area &amp; methods</h3><p>We compare braidplains near the Juneau Icefield and Denali National Park, Alaska. Median NDVI was derived from USGS Landsat surface reflectance imagery, primarily from July–August scenes spanning the 1980s–2020s.</p><p class="eq">NDVI = (NIR − Red) / (NIR + Red)</p><p>Higher NDVI (Normalized Difference Vegetation Index) generally indicates denser green vegetation; it is an indirect indicator of stability, not a direct measure of channel movement.</p><h3>Why it matters</h3><p>As glaciers retreat and lakes develop, changes in sediment transport and river disturbance may alter how downstream landscapes recover and support vegetation.</p><h3>Data &amp; interpretation</h3><p>Landsat imagery was obtained through the <a href="https://earthexplorer.usgs.gov/" target="_blank" rel="noopener">USGS EarthExplorer</a>. Braidplain boundaries were manually delineated for this research. Watershed boundaries and associated variables were obtained from <a href="https://mghydro.com/" target="_blank" rel="noopener">MGHydro</a>. Alaska lake outlines were provided by the research advisor; their original source is not confirmed. Lake outlines are shown for discrete survey periods, not continuous annual observations. <a href="README.md" target="_blank">Data references and credits</a>.</p><small>Study hypothesis, not a confirmed result. Lake-status markers show study classification at braidplain centers, not mapped lake locations.</small></aside><div class="logos" aria-label="Research and institutional logos"><img src="assets/nsf_logo.png" alt="National Science Foundation"><img src="assets/ges_logo.jpg" alt="Appalachian State Geological and Environmental Sciences"><img src="assets/appstate_logo.png" alt="Appalachian State University"></div><div class="foot">Research data: Braidplain Master Glacierization · boundaries: project GeoPackages · basemap: OpenStreetMap HOT</div>
 <script>
-// 1. Create the map object (same structure as Lab 6).
+
+// 1. Create the map object
 var mymap=L.map('map',{center:[61.5,-143.5],zoom:5,minZoom:3,maxZoom:18,detectRetina:true,preferCanvas:true});
-// 2. Add a basemap, following the lab example.
+
+
+// 2. Add a basemap
 var OpenStreetMap_HOT = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | HOT / OpenStreetMap France'
@@ -24,6 +27,8 @@ var braidplain_listings=null, watershed_listings=null, lake_markers=L.layerGroup
 var currentRegion='all', currentMetric='Median_NDVI', currentLakeYear='1986';
 var metrics={Median_NDVI:{label:'Median NDVI',breaks:[0,.1,.2,.3,.4],labels:['< 0','0–0.10','0.10–0.20','0.20–0.30','0.30–0.40','≥ 0.40'],colors:['#b7839a','#e7c7ae','#f0e4b6','#b4d5ac','#63a99d','#267582']},NDVI_Trend_perYear:{label:'NDVI trend / year',breaks:[-.005,-.001,.001,.005,.01],labels:['< −0.005','−0.005 to −0.001','−0.001 to 0.001','0.001 to 0.005','0.005 to 0.010','≥ 0.010'],colors:['#a43c5b','#dc8995','#e5e1d4','#b4d7c6','#68b5a4','#227e79']},Glacierized_Percent_2000:{label:'Glacierized watershed (%) · 2000',breaks:[10,25,40,55,70],labels:['< 10%','10–25%','25–40%','40–55%','55–70%','≥ 70%'],colors:['#f4ebce','#e3d8b0','#c4d3c0','#95bfc4','#5c9eb5','#27688e']}};
 function setColor(value){if(value===null||value===undefined||!Number.isFinite(Number(value)))return '#d3d9db';var m=metrics[currentMetric];var id=0;while(id<m.breaks.length&&Number(value)>=m.breaks[id])id++;return m.colors[id]}
+
+
 // 3. Choropleth polygon style, adapted from sample's style(feature).
 function style(feature){return {fillColor:setColor(feature.properties[currentMetric]),fillOpacity:.77,weight:1.6,opacity:1,color:'#294750'}}
 function fmt(v,d=3){return v===null||v===undefined||!Number.isFinite(Number(v))?'Not available':Number(v).toFixed(d)}
@@ -36,9 +41,13 @@ html+=categories.map(r=>'<div>'+r[0]+': '+(Number.isFinite(Number(r[1]))&&area>0
 function onEachFeature(feature,layer){var p=feature.properties;layer.bindTooltip('<b>BP'+p.BP+' · '+safe(p.Region)+'</b><br>Median NDVI: '+fmt(p.Median_NDVI)+'<br>Trend/year: '+fmt(p.NDVI_Trend_perYear,5),{sticky:true});layer.bindPopup(popup(p));layer.on({mouseover:function(e){e.target.setStyle({weight:3,color:'#112f38',fillOpacity:.92});e.target.bringToFront()},mouseout:function(e){braidplain_listings.resetStyle(e.target)}})}
 function visible(feature){return currentRegion==='all'||String(feature.properties.Region||'').toLowerCase()===currentRegion}
 function redraw(){if(!window.bpData||!window.wsData)return;if(braidplain_listings)mymap.removeLayer(braidplain_listings);if(watershed_listings)mymap.removeLayer(watershed_listings);lake_markers.clearLayers();
+
+
 // 4. GeoJSON polygon layer: style + onEachFeature as in lab.
 braidplain_listings=L.geoJSON(window.bpData,{filter:visible,style:style,onEachFeature:onEachFeature}).addTo(mymap);
 watershed_listings=L.geoJSON(window.wsData,{filter:visible,style:function(){return {color:'#d32f2f',weight:2.8,dashArray:'6,4',fillOpacity:0,interactive:false}}});
+
+
 // 5. Point symbols use Font Awesome (lake markers) and clickable popups.
 window.bpData.features.filter(visible).forEach(function(f){var p=f.properties;if(p.Has_Lake===null)return;var center=L.geoJSON(f).getBounds().getCenter();var col=p.Has_Lake?'#1876b3':'#bf7540';var ico=p.Has_Lake?'fa-water':'fa-mountain';var marker=L.marker(center,{icon:L.divIcon({className:'',html:'<span style="display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:'+col+';border:2px solid white;color:white;box-shadow:0 1px 5px #3338"><i class="fas '+ico+'" style="font-size:10px"></i></span>',iconSize:[26,26],iconAnchor:[13,13]})}).bindPopup(popup(p));lake_markers.addLayer(marker)});
 refreshLakeOutlines();
@@ -46,11 +55,14 @@ if(window.lakeEnabled)lake_markers.addTo(mymap);
 if(window.watershedEnabled)watershed_listings.addTo(mymap);
 if(braidplain_listings.getLayers().length)mymap.fitBounds(braidplain_listings.getBounds().pad(.16),{maxZoom:10});
 var count=window.bpData.features.filter(visible).length;document.getElementById('status').textContent=count+' braidplains shown · click any outline or marker for details';renderLegend()}
+
+    
 // 6. Leaflet legend control, as in Lab 6.
 var legend=L.control({position:'bottomright'});legend.onAdd=function(){var div=L.DomUtil.create('div','legend');div.id='legend';L.DomEvent.disableClickPropagation(div);return div};legend.addTo(mymap);
 function renderLegend(){var m=metrics[currentMetric],el=document.getElementById('legend');el.innerHTML='<h3>'+m.label+'</h3>'+m.colors.map((c,i)=>'<p><span class="swatch" style="background:'+c+'"></span>'+m.labels[i]+'</p>').join('')+'<p><span class="swatch" style="background:#d3d9db"></span>No data</p><hr><p><span class="line"></span>Watershed boundary</p><p><span class="dot" style="background:#1876b3"></span>Lake present</p><p><span class="dot" style="background:#bf7540"></span>No lake</p><small>Lake markers placed at polygon centers (not actual lake locations).</small><p><span class="swatch" style="background:#6cc6e3;border:2px solid #1589c0"></span>Lake outlines</p><hr><label><input id="showOutlines" type="checkbox" '+(window.outlinesEnabled?'checked':'')+'> Lake outlines</label><label><input id="showWatersheds" type="checkbox" '+(window.watershedEnabled?'checked':'')+'> Watershed outlines</label><label><input id="showLakes" type="checkbox" '+(window.lakeEnabled!==false?'checked':'')+'> Lake-status markers</label>';document.getElementById('showOutlines').onchange=e=>{window.outlinesEnabled=e.target.checked;refreshLakeOutlines()};document.getElementById('showWatersheds').onchange=e=>{window.watershedEnabled=e.target.checked;if(e.target.checked)watershed_listings.addTo(mymap);else mymap.removeLayer(watershed_listings)};document.getElementById('showLakes').onchange=e=>{window.lakeEnabled=e.target.checked;if(e.target.checked)lake_markers.addTo(mymap);else mymap.removeLayer(lake_markers)}}
 window.watershedEnabled=false;window.lakeEnabled=true;window.outlinesEnabled=true;renderLegend();
 function refreshLakeOutlines(){if(!window.lakeGeometry)return;lakeOutlines.clearLayers();var feats=window.lakeGeometry.features.filter(function(f){return (currentLakeYear==='all'||String(f.properties.YearMid)===currentLakeYear) && (currentRegion==='all'||(window.regionLakeBounds&&window.regionLakeBounds[currentRegion]&&window.regionLakeBounds[currentRegion].contains(L.geoJSON(f).getBounds().getCenter())))});lakeOutlines.addData({type:'FeatureCollection',features:feats});if(window.outlinesEnabled)lakeOutlines.addTo(mymap);else mymap.removeLayer(lakeOutlines);document.getElementById('lakeCount').textContent=feats.length+' lake outlines in selected period / region';}
+
 
 // 7. Scale bar.
 L.control.scale({position:'bottomleft',metric:true,imperial:false}).addTo(mymap);
